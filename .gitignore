@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables
+.env
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Generated data
+backend/app/data/oracle.db
+backend/app/data/embeddings.npy
+backend/app/data/embeddings.ids.json
+backend/app/data/feedback_log.jsonl
