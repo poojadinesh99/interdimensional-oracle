@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Iterable, List, Mapping, Tuple
+from typing import Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import sqlite3
@@ -35,7 +35,7 @@ class DocumentRecord:
 	id: str
 	title: str
 	content: str
-	source: str | None
+	source: Optional[str]
 
 
 def _load_documents(db_path: Path, ids: Iterable[str]) -> Mapping[str, DocumentRecord]:
@@ -92,7 +92,7 @@ def _cosine_similarities(query_vec: np.ndarray, matrix: np.ndarray) -> np.ndarra
 	return sims
 
 
-def embed_query(text: str, model_name: str | None = None) -> np.ndarray:
+def embed_query(text: str, model_name: Optional[str] = None) -> np.ndarray:
 	"""Generate an embedding for `text` using SentenceTransformer.
 
 	Uses `settings.embedding_model` when `model_name` is None so the project
@@ -104,7 +104,7 @@ def embed_query(text: str, model_name: str | None = None) -> np.ndarray:
 	return np.asarray(vec, dtype=np.float32)
 
 
-def get_embedding_model(model_name: str | None = None) -> SentenceTransformer:
+def get_embedding_model(model_name: Optional[str] = None) -> SentenceTransformer:
 	"""Load the SentenceTransformer once and reuse it for all queries.
 
 	Why: Model loading is expensive, so caching avoids reloading on every query.
@@ -120,7 +120,7 @@ def get_embedding_model(model_name: str | None = None) -> SentenceTransformer:
 	return _embedding_model
 
 
-def semantic_search(query: str, embeddings: np.ndarray, ids: List[str], top_k: int = 10, model_name: str | None = None) -> List[Tuple[str, float, int]]:
+def semantic_search(query: str, embeddings: np.ndarray, ids: List[str], top_k: int = 10, model_name: Optional[str] = None) -> List[Tuple[str, float, int]]:
 	"""Return ranked list of (id, score, rank) from dense embeddings.
 
 	Score is cosine similarity in [-1,1]. Rank is 1-based position.
@@ -144,6 +144,10 @@ def fts_search(db_path: Path, query: str, top_k: int = 10) -> List[Tuple[str, in
 	results: List[Tuple[str, int]] = []
 	with sqlite3.connect(str(db_path)) as conn:
 		cur = conn.cursor()
+		# FTS5 MATCH doesn't always accept bound parameters consistently across SQLite versions.
+		# Safest option here is to interpolate a quoted query string.
+		escaped = query.replace("\"", "\"\"")
+		fts_query = f"\"{escaped}\""
 		cur.execute(
 			"""
 			SELECT id, bm25(documents_fts) AS rank
@@ -152,7 +156,7 @@ def fts_search(db_path: Path, query: str, top_k: int = 10) -> List[Tuple[str, in
 			ORDER BY rank
 			LIMIT ?
 			""",
-			(query, top_k),
+			(fts_query, top_k),
 		)
 		rows = cur.fetchall()
 	for rank, row in enumerate(rows, start=1):
@@ -183,7 +187,13 @@ def rrf_merge(sem_results: List[Tuple[str, float, int]], fts_results: List[Tuple
 	return [(_id, float(score / max_score)) for _id, score in merged]
 
 
-def retrieve(query: str, top_k: int = 10, db_path: Path | None = None, embeddings_path: Path | None = None, ids_path: Path | None = None) -> List[dict]:
+def retrieve(
+	query: str,
+	top_k: int = 10,
+	db_path: Optional[Path] = None,
+	embeddings_path: Optional[Path] = None,
+	ids_path: Optional[Path] = None,
+) -> List[Dict[str, Union[str, float]]]:
 	"""Top-level retrieval function used by the RAG pipeline.
 
 	Returns a list of dictionaries with keys: `id`, `title`, `content`, `source`, `score`.
@@ -193,6 +203,29 @@ def retrieve(query: str, top_k: int = 10, db_path: Path | None = None, embedding
 	base = db_path.parent
 	embeddings_path = Path(embeddings_path or (base / "embeddings.npy"))
 	ids_path = Path(ids_path or (base / "embeddings.ids.json"))
+
+	# Prefer embeddings/db artefacts in the project-level `backend/data`.
+	# This keeps runtime compatible with how ingest.py persists files.
+	project_data_dir = Path(__file__).resolve().parents[1] / "data"
+	fallback_data_dir = Path(__file__).resolve().parent / "data"
+
+	if not db_path.exists():
+		if (project_data_dir / "oracle.db").exists():
+			db_path = project_data_dir / "oracle.db"
+		else:
+			db_path = fallback_data_dir / "oracle.db"
+
+	if not embeddings_path.exists():
+		if (project_data_dir / "embeddings.npy").exists():
+			embeddings_path = project_data_dir / "embeddings.npy"
+		else:
+			embeddings_path = fallback_data_dir / "embeddings.npy"
+
+	if not ids_path.exists():
+		if (project_data_dir / "embeddings.ids.json").exists():
+			ids_path = project_data_dir / "embeddings.ids.json"
+		else:
+			ids_path = fallback_data_dir / "embeddings.ids.json"
 
 	# Load dense embeddings and ids
 	embeddings, ids = load_embeddings(embeddings_path, ids_path)

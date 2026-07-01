@@ -1,6 +1,5 @@
 annotated-doc==0.0.4
 annotated-types==0.7.0
-anthropic==0.115.0
 anyio==4.12.1
 certifi==2026.6.17
 charset-normalizer==3.4.7
@@ -16,6 +15,7 @@ hf-xet==1.5.1
 httpcore==1.0.9
 httpx==0.28.1
 huggingface_hub==0.36.2
+google-genai
 idna==3.18
 Jinja2==3.1.6
 jiter==0.16.0

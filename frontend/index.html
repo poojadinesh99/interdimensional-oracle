@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Interdimensional Oracle</title>
+		<link rel="stylesheet" href="style.css" />
+	</head>
+	<body>
+		<main class="shell">
+			<section class="hero">
+				<p class="eyebrow">Gemini-ready RAG assistant</p>
+				<h1>Interdimensional Oracle</h1>
+				<p class="subtitle">Ask a question about Rick and Morty and get a context-aware answer.</p>
+			</section>
+
+			<section class="tabs" aria-label="Primary views">
+				<button class="tab is-active" type="button" data-tab="chat">💬 Chat</button>
+				<button class="tab" type="button" data-tab="browse">📚 Browse</button>
+			</section>
+
+			<section id="chat-pane" class="pane is-active">
+				<div id="chat-history" class="chat-history" aria-live="polite"></div>
+
+				<form id="chat-form" class="chat-form">
+					<label class="sr-only" for="question">Your question</label>
+					<textarea id="question" rows="3" placeholder="Ask about Rick, Morty, a location, or an episode..." required></textarea>
+					<button type="submit">Send</button>
+				</form>
+			</section>
+
+			<section id="browse-pane" class="pane">
+				<div class="browse-toolbar">
+					<input id="browse-search" type="search" placeholder="Search the knowledge base..." />
+					<div class="filters" role="tablist" aria-label="Browse filters">
+						<button class="filter is-active" type="button" data-filter="all">All</button>
+						<button class="filter" type="button" data-filter="character">Characters</button>
+						<button class="filter" type="button" data-filter="episode">Episodes</button>
+						<button class="filter" type="button" data-filter="location">Locations</button>
+					</div>
+				</div>
+				<div id="browse-results" class="browse-grid"></div>
+			</section>
+		</main>
+		<script src="app.js"></script>
+	</body>
+</html>

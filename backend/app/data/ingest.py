@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import numpy as np
 import requests
@@ -30,17 +30,16 @@ class Document:
     id: str
     title: str
     content: str
-    source: str | None = None
+    source: Optional[str] = None
 
 
 def fetch_all(resource: str, retry: int = 3, pause: float = 0.5) -> List[dict]:
     """
     Fetch every page for a given Rick & Morty resource.
 
-    Why: The API is paginated; this utility centralises pagination handling.
-    Why here: This file is the data ingestion pipeline and needs raw API data.
     Assumptions: The API follows the documented `info.next` pagination field.
     """
+
 
     url = f"{API_BASE}/{resource}"
     items: List[dict] = []
@@ -50,9 +49,19 @@ def fetch_all(resource: str, retry: int = 3, pause: float = 0.5) -> List[dict]:
             resp = requests.get(url, timeout=10)
             if resp.status_code == 200:
                 break
-            if attempt == retry:
+            if resp.status_code != 429 and attempt == retry:
                 resp.raise_for_status()
-            time.sleep(pause * attempt)
+
+            retry_after = resp.headers.get("Retry-After")
+            wait_seconds = pause * attempt
+            if retry_after:
+                try:
+                    wait_seconds = max(wait_seconds, float(retry_after))
+                except ValueError:
+                    pass
+            time.sleep(wait_seconds)
+        else:
+            resp.raise_for_status()
 
         data = resp.json()
         results = data.get("results") or []
@@ -66,10 +75,9 @@ def normalize_character(raw: dict) -> Document:
     """
     Convert a single raw character JSON into a Document.
 
-    Why: Normalisation decouples downstream storage and embedding code from API shape.
-    Why here: Ingest module owns transforming API records to the local document model.
     Assumptions: Fields such as `name`, `status`, `species` exist on the API object.
     """
+
 
     char_id = str(raw.get("id"))
     title = raw.get("name", "")
@@ -94,10 +102,9 @@ def normalize_episode(raw: dict) -> Document:
     """
     Convert a single raw episode JSON into a Document.
 
-    Why: Episodes have different fields; keep normalisation local to ingest.
-    Why here: This file prepares the canonical documents stored locally.
     Assumptions: `name`, `air_date`, `episode`, and `characters` exist.
     """
+
 
     ep_id = str(raw.get("id"))
     title = raw.get("name", "")
@@ -118,10 +125,9 @@ def normalize_location(raw: dict) -> Document:
     """
     Convert a single raw location JSON into a Document.
 
-    Why: Locations include dimension/type information used in retrieval later.
-    Why here: Normalisation is part of ingestion responsibilities.
     Assumptions: `name`, `type`, `dimension`, and `residents` exist.
     """
+
 
     loc_id = str(raw.get("id"))
     title = raw.get("name", "")
@@ -142,10 +148,9 @@ def init_db(db_path: Path) -> None:
     """
     Create a SQLite database and the `documents` table if it does not exist.
 
-    Why: Persisting raw documents enables reproducible local retrieval and inspection.
-    Why here: The ingest module owns creating the local knowledge store.
     Assumptions: Caller can write to `db_path`'s parent directory.
     """
+
 
     # Ensure parent directory exists
     db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -177,10 +182,9 @@ def insert_documents(conn: sqlite3.Connection, documents: Iterable[Document]) ->
     """
     Insert or replace documents into the SQLite `documents` table.
 
-    Why: Simple persistence; using INSERT OR REPLACE keeps the ingest idempotent.
-    Why here: Writing to the DB is part of ingestion responsibilities.
     Assumptions: `conn` references a valid SQLite connection with `documents` table.
     """
+
 
     rows = []
     for doc in documents:
@@ -208,10 +212,9 @@ def generate_embeddings(documents: Iterable[Document], model_name: str = "senten
     """
     Generate dense embeddings for the provided documents using SentenceTransformers.
 
-    Why: Embeddings are required for later similarity search and RAG.
-    Why here: This file is responsible for producing the local knowledge artefacts.
     Assumptions: The `sentence-transformers` package is installed and model can be downloaded.
     """
+
 
     model = SentenceTransformer(model_name)
     texts: List[str] = []
@@ -230,10 +233,9 @@ def save_embeddings(embeddings: np.ndarray, ids: List[str], embeddings_path: Pat
     """
     Persist embeddings to disk as `.npy` and write ids mapping as JSON.
 
-    Why: Storing embeddings locally avoids recomputation and keeps a simple vector store.
-    Why here: Generation and saving of embeddings belong to ingestion responsibilities.
     Assumptions: Caller has write access to the target paths.
     """
+
 
     embeddings_path.parent.mkdir(parents=True, exist_ok=True)
     np.save(embeddings_path, embeddings)
@@ -246,6 +248,7 @@ def save_metadata(embeddings: np.ndarray, model_name: str, metadata_path: Path, 
     Save simple metadata for the embeddings (model, dimension, created_at).
     """
 
+
     metadata = {
         "model": model_name,
         "embedding_model": model_name,
@@ -257,7 +260,7 @@ def save_metadata(embeddings: np.ndarray, model_name: str, metadata_path: Path, 
         json.dump(metadata, fh, ensure_ascii=False, indent=2)
 
 
-def ingest_all(db_path: Path, embeddings_path: Path, ids_path: Path, model_name: str | None = None) -> None:
+def ingest_all(db_path: Path, embeddings_path: Path, ids_path: Path, model_name: Optional[str] = None) -> None:
     """
     End-to-end ingestion: fetch, normalise, persist, embed, and save.
 
@@ -314,4 +317,5 @@ if __name__ == "__main__":
     embeddings_file = base / "data" / "embeddings.npy"
     ids_file = base / "data" / "embeddings.ids.json"
     ingest_all(db_file, embeddings_file, ids_file)
+
 

@@ -1,0 +1,260 @@
+* {
+	box-sizing: border-box;
+}
+
+:root {
+	--bg: #09090f;
+	--panel: rgba(13, 15, 30, 0.82);
+	--panel-strong: rgba(8, 10, 20, 0.92);
+	--border: rgba(141, 216, 255, 0.18);
+	--text: #f5f7ff;
+	--muted: rgba(245, 247, 255, 0.72);
+	--accent: #8dd8ff;
+	--accent-2: #7d7bff;
+}
+
+body {
+	margin: 0;
+	font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+	background: radial-gradient(circle at top, #1c1b3a, var(--bg) 60%);
+	color: var(--text);
+	min-height: 100vh;
+}
+
+.shell {
+	width: min(1080px, calc(100% - 2rem));
+	margin: 0 auto;
+	padding: 4rem 0;
+}
+
+.hero h1 {
+	margin: 0.25rem 0;
+	font-size: clamp(2.5rem, 5vw, 4.5rem);
+}
+
+.eyebrow {
+	margin: 0;
+	text-transform: uppercase;
+	letter-spacing: 0.18em;
+	color: var(--accent);
+	font-size: 0.8rem;
+}
+
+.subtitle {
+	max-width: 56ch;
+	color: var(--muted);
+}
+
+.tabs,
+.browse-toolbar,
+.chat-form {
+	margin-top: 1.5rem;
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 20px;
+	padding: 1rem;
+	box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+	backdrop-filter: blur(18px);
+}
+
+.tabs {
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.tab,
+.filter,
+button {
+	border: 0;
+	border-radius: 999px;
+	padding: 0.85rem 1.15rem;
+	font-weight: 700;
+	cursor: pointer;
+	color: var(--text);
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.tab.is-active,
+.filter.is-active,
+button {
+	background: linear-gradient(135deg, var(--accent), var(--accent-2));
+	color: #09090f;
+}
+
+.pane {
+	display: none;
+	margin-top: 1rem;
+	gap: 1rem;
+}
+
+.pane.is-active {
+	display: grid;
+}
+
+.chat-history {
+	display: grid;
+	gap: 1rem;
+	max-height: min(62vh, 760px);
+	overflow-y: auto;
+	padding-right: 0.25rem;
+}
+
+.message {
+	padding: 1rem;
+	border-radius: 20px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	max-width: 92%;
+}
+
+.message-user {
+	justify-self: end;
+	background: rgba(125, 123, 255, 0.22);
+	border-top-right-radius: 6px;
+}
+
+.message-assistant {
+	justify-self: start;
+	background: var(--panel);
+	border-top-left-radius: 6px;
+}
+
+.message-label {
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: var(--accent);
+	margin-bottom: 0.5rem;
+}
+
+.message-text {
+	white-space: pre-wrap;
+	line-height: 1.55;
+}
+
+.assistant-meta {
+	margin-top: 1rem;
+}
+
+.confidence-row {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.9rem;
+	color: var(--muted);
+	margin-bottom: 0.5rem;
+}
+
+.confidence-bar {
+	height: 10px;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.08);
+	overflow: hidden;
+}
+
+.confidence-bar span {
+	display: block;
+	height: 100%;
+	border-radius: inherit;
+	background: linear-gradient(90deg, var(--accent), var(--accent-2));
+}
+
+.source-grid,
+.browse-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 0.85rem;
+	margin-top: 1rem;
+}
+
+.source-card,
+.browse-card {
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	border-radius: 18px;
+	padding: 1rem;
+}
+
+.source-kicker,
+.browse-kind {
+	font-size: 0.78rem;
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	color: var(--accent);
+	margin-bottom: 0.5rem;
+}
+
+.source-card h4,
+.browse-card h3 {
+	margin: 0 0 0.5rem;
+}
+
+.source-card p,
+.browse-card p {
+	margin: 0;
+	color: var(--muted);
+	line-height: 1.5;
+}
+
+.source-score {
+	margin-top: 0.75rem;
+	font-size: 0.9rem;
+	color: var(--text);
+}
+
+.browse-toolbar {
+	display: grid;
+	gap: 1rem;
+}
+
+.browse-toolbar input,
+textarea {
+	width: 100%;
+	border-radius: 16px;
+	border: 1px solid rgba(141, 216, 255, 0.25);
+	background: var(--panel-strong);
+	color: inherit;
+	padding: 1rem;
+	font: inherit;
+	min-height: 52px;
+}
+
+textarea {
+	min-height: 88px;
+	resize: vertical;
+}
+
+.filters {
+	display: flex;
+	gap: 0.75rem;
+	flex-wrap: wrap;
+}
+
+.empty-state,
+.sr-only {
+	color: var(--muted);
+}
+
+.empty-state {
+	padding: 1rem;
+	border: 1px dashed rgba(255, 255, 255, 0.18);
+	border-radius: 18px;
+}
+
+.sr-only {
+	position: absolute;
+	left: -9999px;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+}
+
+@media (max-width: 840px) {
+	.shell {
+		width: min(100% - 1rem, 1080px);
+		padding: 2rem 0 3rem;
+	}
+
+	.message {
+		max-width: 100%;
+	}
+}

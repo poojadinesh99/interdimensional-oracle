@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Union
 
 from .config import Settings, settings as default_settings
 from .guardrails import validate_question
@@ -15,7 +16,7 @@ except ImportError:
 @dataclass(frozen=True)
 class GenerationResult:
 	answer: str
-	sources: list[dict[str, str | float]]
+	sources: List[Dict[str, Union[str, float]]]
 	confidence: float
 
 
@@ -40,7 +41,7 @@ class RAGPipeline:
 	def __init__(
 		self,
 		settings: Settings = default_settings,
-		llm_client: GeminiClient | None = None,
+		llm_client: Optional[GeminiClient] = None,
 	) -> None:
 		self.settings = settings
 		self._llm_client = llm_client
@@ -53,7 +54,7 @@ class RAGPipeline:
 		self._llm_client = GeminiClient(api_key=self.settings.google_api_key, model=self.settings.llm_model)
 		return self._llm_client
 
-	def _confidence(self, sources: list[dict]) -> float:
+	def _confidence(self, sources: List[Dict[str, Union[str, float]]]) -> float:
 		if not sources:
 			return 0.0
 		return round(sum(float(source.get("score", 0.0)) for source in sources) / len(sources), 3)
