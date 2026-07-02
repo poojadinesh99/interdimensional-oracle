@@ -78,10 +78,11 @@ GOOGLE_API_KEY=your_api_key_here
 > Note: the app loads `backend/.env` automatically at startup.
 
 ### 3) Knowledge base artefacts
-The repo expects these artefacts to exist locally (already present in your checkout):
+Ensure these artefacts exist locally:
 - `backend/data/oracle.db`
 - `backend/data/embeddings.npy`
 - `backend/data/embeddings.ids.json`
+
 
 ### 4) Run locally
 
