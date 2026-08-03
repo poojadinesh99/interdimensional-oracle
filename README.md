@@ -1,5 +1,7 @@
 # Interdimensional Oracle
 
+[![License](https://img.shields.io/github/license/poojadinesh99/interdimensional-oracle)](https://github.com/poojadinesh99/interdimensional-oracle/blob/main/LICENSE)
+
 A Retrieval-Augmented Generation (RAG) chatbot that answers questions about the Rick and Morty universe using a Gemini-based LLM layer.
 
 ---
@@ -118,6 +120,7 @@ The frontend is configured to talk to `http://127.0.0.1:8000`.
 - **Docker deployment** (pin python/OS deps + simplify local setup).
 - **Automated testing** (API contract tests + retrieval smoke tests).
 - Add observability: request IDs, structured logging, and retrieval debug endpoints.
+
 
 
 
