@@ -2,8 +2,7 @@
 
 [![License](https://img.shields.io/github/license/poojadinesh99/interdimensional-oracle)](https://github.com/poojadinesh99/interdimensional-oracle/blob/main/LICENSE)
 
-A Retrieval-Augmented Generation (RAG) chatbot that answers questions about the Rick and Morty universe using a Gemini-based LLM layer.
-
+A hybrid-retrieval RAG chatbot that combines keyword search, embeddings, and Reciprocal Rank Fusion to answer questions grounded in a local knowledge base — built to understand RAG beyond the tutorial level.
 ---
 
 ## Architecture
