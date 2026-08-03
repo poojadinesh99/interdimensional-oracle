@@ -187,6 +187,23 @@ def rrf_merge(sem_results: List[Tuple[str, float, int]], fts_results: List[Tuple
 	return [(_id, float(score / max_score)) for _id, score in merged]
 
 
+def _dedupe_key(title: str, content: str) -> str:
+	"""Normalize a document's identity for de-duplication.
+
+	The Rick & Morty API has many minor/background characters that share a
+	name and every field except their id/Created timestamp (e.g. two
+	separate "High Pilot" records). Stripping those volatile lines lets us
+	treat such records as duplicates instead of letting them crowd out
+	genuinely distinct results in the top-k.
+	"""
+
+	lines = (
+		line for line in content.splitlines()
+		if not line.startswith("Created:") and not line.startswith("URL:")
+	)
+	return f"{title.strip().lower()}|{' '.join(lines).strip().lower()}"
+
+
 def retrieve(
 	query: str,
 	top_k: int = 10,
@@ -230,26 +247,35 @@ def retrieve(
 	# Load dense embeddings and ids
 	embeddings, ids = load_embeddings(embeddings_path, ids_path)
 
+	# Pull a larger candidate pool than top_k so there's still enough left
+	# to fill the final list after near-duplicate records are collapsed.
+	pool_k = top_k * 3
+
 	# Semantic search (top_k * 2 to give room for fusion)
-	sem_top = max(top_k * 2, top_k)
+	sem_top = max(pool_k * 2, pool_k)
 	sem_results = semantic_search(query, embeddings, ids, top_k=sem_top, model_name=None)
 
 	# FTS search
-	fts_results = fts_search(db_path, query, top_k=top_k * 2)
+	fts_results = fts_search(db_path, query, top_k=pool_k * 2)
 
 	# Merge via RRF
-	merged = rrf_merge(sem_results, fts_results, top_k=top_k)
+	merged = rrf_merge(sem_results, fts_results, top_k=pool_k)
 
 	# Load document fields for returned ids
 	ids_order = [doc_id for doc_id, _ in merged]
 	docs_map = _load_documents(db_path, ids_order)
 
 	results: List[dict] = []
+	seen: set[str] = set()
 	for doc_id, score in merged:
 		doc = docs_map.get(doc_id)
 		if not doc:
 			# skip missing documents
 			continue
+		key = _dedupe_key(doc.title, doc.content)
+		if key in seen:
+			continue
+		seen.add(key)
 		results.append({
 			"id": doc.id,
 			"title": doc.title,
@@ -257,5 +283,7 @@ def retrieve(
 			"source": doc.source,
 			"score": score,
 		})
+		if len(results) >= top_k:
+			break
 
 	return results

@@ -1,11 +1,16 @@
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Dict, List, Union
 import traceback
 from .config import settings
 
 from .rag_pipeline import RAGPipeline
+
+FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 
 class ChatRequest(BaseModel):
@@ -57,3 +62,10 @@ def chat(payload: ChatRequest) -> ChatResponse:
 
 
 	return ChatResponse(answer=result.answer, sources=result.sources, confidence=result.confidence)
+
+
+# Registered last so it only catches what the API routes above don't:
+# frontend/app.js calls the API via relative paths (e.g. "/api/chat"), which
+# only resolve correctly when the page is served from this same origin
+# rather than opened directly as a file:// path.
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
