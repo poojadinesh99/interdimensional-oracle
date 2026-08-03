@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/github/license/poojadinesh99/interdimensional-oracle)](https://github.com/poojadinesh99/interdimensional-oracle/blob/main/LICENSE)
 
-A hybrid-retrieval RAG chatbot that combines keyword search, embeddings, and Reciprocal Rank Fusion to answer questions grounded in a local knowledge base — built to understand RAG beyond the tutorial level.
+Hybrid-retrieval RAG chatbot (FTS5 + embeddings + RRF) with a FastAPI backend and Gemini LLM layer.
 ---
 
 ## Architecture
