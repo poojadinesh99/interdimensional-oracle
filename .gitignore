@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+.env
+backend/app/data/oracle.db
+backend/app/data/embeddings.npy
+backend/app/data/vocab.json
+backend/app/data/feedback_log.jsonl
+.DS_Store
