@@ -3,14 +3,9 @@ from typing import Dict, List, Optional, Union
 
 from .config import Settings, settings as default_settings
 from .guardrails import validate_question
+from .llm_clients import GeminiClient, LiteLLMGatewayClient, LLMClient
 from .rag_prompts import build_prompt
 from .retrieval import retrieve
-
-
-try:
-	from google import genai
-except ImportError:
-	genai = None
 
 
 @dataclass(frozen=True)
@@ -20,38 +15,37 @@ class GenerationResult:
 	confidence: float
 
 
-class GeminiClient:
-	def __init__(self, api_key: str, model: str) -> None:
-		if genai is None:
-			raise RuntimeError(
-				"The google-genai package is not installed. Install requirements.txt first."
-			)
-		self._client = genai.Client(api_key=api_key)
-		self._model = model
+def build_llm_client(settings: Settings) -> LLMClient:
+	"""Create the LLM client for the configured provider."""
 
-	def generate(self, prompt: str) -> str:
-		response = self._client.models.generate_content(
-			model=self._model,
-			contents=prompt,
+	if settings.llm_provider == "litellm":
+		return LiteLLMGatewayClient(
+			base_url=settings.litellm_base_url,
+			model=settings.llm_model,
+			api_key=settings.litellm_api_key,
+			timeout=settings.llm_timeout_seconds,
 		)
-		return (getattr(response, "text", None) or "").strip()
+	if settings.llm_provider == "gemini":
+		if not settings.google_api_key:
+			raise ValueError("GOOGLE_API_KEY is missing. Add it to your environment file.")
+		return GeminiClient(api_key=settings.google_api_key, model=settings.llm_model)
+	raise ValueError(
+		f"Unknown LLM_PROVIDER '{settings.llm_provider}'. Use 'litellm' or 'gemini'."
+	)
 
 
 class RAGPipeline:
 	def __init__(
 		self,
 		settings: Settings = default_settings,
-		llm_client: Optional[GeminiClient] = None,
+		llm_client: Optional[LLMClient] = None,
 	) -> None:
 		self.settings = settings
 		self._llm_client = llm_client
 
-	def _get_llm_client(self) -> GeminiClient:
-		if self._llm_client is not None:
-			return self._llm_client
-		if not self.settings.google_api_key:
-			raise ValueError("GOOGLE_API_KEY is missing. Add it to your environment file.")
-		self._llm_client = GeminiClient(api_key=self.settings.google_api_key, model=self.settings.llm_model)
+	def _get_llm_client(self) -> LLMClient:
+		if self._llm_client is None:
+			self._llm_client = build_llm_client(self.settings)
 		return self._llm_client
 
 	def _confidence(self, sources: List[Dict[str, Union[str, float]]]) -> float:

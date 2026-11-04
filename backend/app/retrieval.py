@@ -13,16 +13,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List, Mapping, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Iterable, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import sqlite3
-from sentence_transformers import SentenceTransformer
 
 from .config import settings
 
+if TYPE_CHECKING:
+	from sentence_transformers import SentenceTransformer
 
-_embedding_model: SentenceTransformer | None = None
+
+# sentence-transformers (and torch) are imported on first use rather than at
+# module import, so processes that only import this module — e.g. the MCP
+# server answering `tools/list` — start without loading torch.
+_embedding_model: "SentenceTransformer | None" = None
 
 
 @dataclass(frozen=True)
@@ -104,7 +109,7 @@ def embed_query(text: str, model_name: Optional[str] = None) -> np.ndarray:
 	return np.asarray(vec, dtype=np.float32)
 
 
-def get_embedding_model(model_name: Optional[str] = None) -> SentenceTransformer:
+def get_embedding_model(model_name: Optional[str] = None) -> "SentenceTransformer":
 	"""Load the SentenceTransformer once and reuse it for all queries.
 
 	Why: Model loading is expensive, so caching avoids reloading on every query.
@@ -116,6 +121,8 @@ def get_embedding_model(model_name: Optional[str] = None) -> SentenceTransformer
 
 	desired_model = model_name or settings.embedding_model
 	if _embedding_model is None:
+		from sentence_transformers import SentenceTransformer
+
 		_embedding_model = SentenceTransformer(desired_model)
 	return _embedding_model
 
