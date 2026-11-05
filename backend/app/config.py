@@ -21,6 +21,10 @@ class Settings:
 	llm_provider: str = os.getenv("LLM_PROVIDER", "gemini").strip().lower()
 	llm_model: str = os.getenv("MODEL_NAME", "gemini-2.5-flash")
 	google_api_key: Optional[str] = os.getenv("GOOGLE_API_KEY")
+	# LiteLLM gateway (used when LLM_PROVIDER=litellm; MODEL_NAME is then a gateway alias)
+	litellm_base_url: str = os.getenv("LITELLM_BASE_URL", "http://localhost:4000")
+	litellm_api_key: Optional[str] = os.getenv("LITELLM_API_KEY")
+	llm_timeout_seconds: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "60"))
 	database_path: Path = Path(os.getenv("DATABASE_PATH", "backend/data/oracle.db"))
 
 	embedding_model: str = os.getenv(

@@ -1,0 +1,43 @@
+# LiteLLM proxy config for Interdimensional Oracle.
+#
+# The app never talks to a model provider directly. It sends OpenAI-format
+# requests to this gateway using a model *alias*; the gateway maps the alias to
+# a real provider model, holds the provider API keys, retries, falls back, and
+# logs spend per request.
+#
+# Run:  docker compose up litellm     (see docker-compose.yml)
+
+model_list:
+  # Primary model used by the app (MODEL_NAME=oracle-default)
+  - model_name: oracle-default
+    litellm_params:
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GOOGLE_API_KEY
+      timeout: 30
+
+  # Cheaper/faster model the router falls back to if the primary fails
+  - model_name: oracle-fallback
+    litellm_params:
+      model: gemini/gemini-2.5-flash-lite
+      api_key: os.environ/GOOGLE_API_KEY
+      timeout: 30
+
+  # Offline model for local runs and CI: returns a fixed answer, no API key needed.
+  # Use with MODEL_NAME=oracle-mock.
+  - model_name: oracle-mock
+    litellm_params:
+      model: openai/mock
+      api_key: not-needed
+      mock_response: "Mock answer from the LiteLLM gateway (oracle-mock)."
+
+router_settings:
+  num_retries: 2
+  fallbacks:
+    - oracle-default: ["oracle-fallback"]
+
+litellm_settings:
+  drop_params: true
+
+general_settings:
+  # Clients must send this key (or a virtual key created from it) as a Bearer token.
+  master_key: os.environ/LITELLM_MASTER_KEY

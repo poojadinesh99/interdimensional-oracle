@@ -8,6 +8,7 @@ from typing import Dict, List, Union
 import traceback
 from .config import settings
 
+from .llm_clients import LLMGatewayError
 from .rag_pipeline import RAGPipeline
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -52,6 +53,9 @@ def chat(payload: ChatRequest) -> ChatResponse:
 		result = pipeline.answer(payload.question)
 	except ValueError as exc:
 		raise HTTPException(status_code=400, detail=str(exc)) from exc
+	except LLMGatewayError as exc:
+		# Upstream (gateway/model) failure, not a bug in this service.
+		raise HTTPException(status_code=502, detail=str(exc)) from exc
 	except Exception as exc:
 		# Log full traceback to diagnose 500s during API usage.
 		traceback.print_exc()
