@@ -135,8 +135,8 @@ Copy `backend/.env.example` to `backend/.env` and set at minimum:
 LLM_PROVIDER=litellm
 MODEL_NAME=oracle-default        # or oracle-mock to run without an API key
 LITELLM_BASE_URL=http://localhost:4000
-LITELLM_MASTER_KEY=sk-change-me  # read by the gateway
-LITELLM_API_KEY=sk-change-me     # sent by the app
+LITELLM_MASTER_KEY=sk-change-here  # read by the gateway
+LITELLM_API_KEY=sk-change-here     # sent by the app
 GOOGLE_API_KEY=your_api_key_here # read by the gateway
 ```
 
